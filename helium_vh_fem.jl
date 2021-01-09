@@ -1,12 +1,10 @@
 module Helium_Vh_FEM
     include("gausslegendre.jl")
     include("helium_vh_fem_module.jl")
-    include("helium_hf_fem_eigen.jl")
     using LinearAlgebra
     using Match
     using Printf
     using .GaussLegendre
-    using .Helium_HF_FEM_Eigen
     using .Helium_Vh_FEM_module
 
     function construct(hfem_param)
@@ -25,8 +23,8 @@ module Helium_Vh_FEM
         return vh_param, vh_val
     end
 
-    function do_run(scfloop, hfem_param, hfem_val, vh_val)
-        @match scfloop begin
+    function solvepoisson(iter, hfem_param, hfem_val, vh_val)
+        @match iter begin
             # 要素行列とLocal節点ベクトルを生成
             0 => make_element_matrix_and_vector_first(hfem_param, hfem_val, vh_val)
         
@@ -70,12 +68,12 @@ module Helium_Vh_FEM
 
                 vh_val.vec_b_ele[e, i] =
                     @match i begin
-                        1 => -GaussLegendre.gl_integ(r -> -r * Helium_HF_FEM_Eigen.rho(hfem_param, hfem_val, r) * (hfem_val.node_r_ele[e, 2] - r) / hfem_val.length[e],
+                        1 => -GaussLegendre.gl_integ(r -> -r * rho(hfem_param, hfem_val, r) * (hfem_val.node_r_ele[e, 2] - r) / hfem_val.length[e],
                                                      hfem_val.node_r_ele[e, 1],
                                                      hfem_val.node_r_ele[e, 2],
                                                      vh_val)
                         
-                        2 => -GaussLegendre.gl_integ(r -> -r * Helium_HF_FEM_Eigen.rho(hfem_param, hfem_val, r) * (r - hfem_val.node_r_ele[e, 1]) / hfem_val.length[e],
+                        2 => -GaussLegendre.gl_integ(r -> -r * rho(hfem_param, hfem_val, r) * (r - hfem_val.node_r_ele[e, 1]) / hfem_val.length[e],
                                                      hfem_val.node_r_ele[e, 1],
                                                      hfem_val.node_r_ele[e, 2],
                                                      vh_val)
@@ -135,4 +133,26 @@ module Helium_Vh_FEM
 
         return tmp_dv, tmp_ev
     end
+
+    rho(hfem_param, hfem_val, r) = let
+        klo = 1
+        max = hfem_param.NODE_TOTAL
+        khi = max
+
+        # 表の中の正しい位置を二分探索で求める
+        @inbounds while khi - klo > 1
+            k = (khi + klo) >> 1
+
+            if hfem_val.node_r_glo[k] > r
+                khi = k        
+            else 
+                klo = k
+            end
+        end
+
+        # yvec_[i] = f(xvec_[i]), yvec_[i + 1] = f(xvec_[i + 1])の二点を通る直線を代入
+        tmp = (hfem_val.phi[khi] - hfem_val.phi[klo]) / (hfem_val.node_r_glo[khi] - hfem_val.node_r_glo[klo]) * (r - hfem_val.node_r_glo[klo]) + hfem_val.phi[klo]
+        return tmp * tmp
+    end
+
 end

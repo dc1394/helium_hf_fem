@@ -12,7 +12,7 @@ module Helium_HF_FEM_Eigen
     const NODE_TOTAL = 5000
 
     function construct()
-        hfem_param = Helium_HF_FEM_Eigen_module.Helium_HF_FEM_Eigen_param(NODE_TOTAL - 1, NODE_TOTAL, 30.0, 0.0)
+        hfem_param = Helium_HF_FEM_Eigen_module.Helium_HF_FEM_Eigen_param(NODE_TOTAL - 1, NODE_TOTAL, 200.0, 0.0)
         hfem_val = Helium_HF_FEM_Eigen_module.Helium_HF_FEM_Eigen_variables(
             Symmetric(zeros(hfem_param.ELE_TOTAL, hfem_param.ELE_TOTAL)),
             Array{Float64}(undef, hfem_param.ELE_TOTAL),
@@ -22,15 +22,14 @@ module Helium_HF_FEM_Eigen
             Array{Float64, 2}(undef, hfem_param.ELE_TOTAL, hfem_param.ELE_TOTAL),
             Array{Float64}(undef, hfem_param.NODE_TOTAL),
             Array{Float64}(undef, hfem_param.NODE_TOTAL),
-            0.0,
             Symmetric(zeros(hfem_param.ELE_TOTAL, hfem_param.ELE_TOTAL)),
             Array{Float64}(undef, hfem_param.NODE_TOTAL))
         
         return hfem_param, hfem_val
     end
 
-    function make_wavefunction(scfloop, hfem_param, hfem_val, vh_val)
-        if scfloop == 0
+    function make_wavefunction(iter, hfem_param, hfem_val, vh_val)
+        if iter == 0
             # データの生成
             make_data!(hfem_param, hfem_val)
         
@@ -60,28 +59,7 @@ module Helium_HF_FEM_Eigen
 
         return eigenval[1]
     end
-
-    rho(hfem_param, hfem_val, r) = let
-        klo = 1
-        max = hfem_param.NODE_TOTAL
-        khi = max
-
-        # 表の中の正しい位置を二分探索で求める
-        @inbounds while khi - klo > 1
-            k = (khi + klo) >> 1
-
-            if hfem_val.node_r_glo[k] > r
-                khi = k        
-            else 
-                klo = k
-            end
-        end
-
-        # yvec_[i] = f(xvec_[i]), yvec_[i + 1] = f(xvec_[i + 1])の二点を通る直線を代入
-        tmp = (hfem_val.phi[khi] - hfem_val.phi[klo]) / (hfem_val.node_r_glo[khi] - hfem_val.node_r_glo[klo]) * (r - hfem_val.node_r_glo[klo]) + hfem_val.phi[klo]
-        return tmp * tmp
-    end
-
+    
     rVh(hfem_param, hfem_val, vh_val, r) = let
         klo = 1
         max = hfem_param.NODE_TOTAL

@@ -17,7 +17,6 @@ module Helium_HF_FEM_Eigen_module
         node_r_ele::Array{Float64, 2}
         node_r_glo::Array{Float64, 1}
         phi::Array{Float64, 1}
-        totalenergy::Float64
         ug::Symmetric{Float64,Array{Float64,2}}
         vh::Array{Float64, 1}
     end
