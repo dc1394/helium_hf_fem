@@ -1,17 +1,17 @@
-module Helium_Vh
+module Helium_Vh_FEM
     include("gausslegendre.jl")
-    include("helium_vh_module.jl")
-    include("helium_hf_eigen.jl")
+    include("helium_vh_fem_module.jl")
+    include("helium_hf_fem_eigen.jl")
     using LinearAlgebra
     using Match
     using Printf
     using .GaussLegendre
-    using .Helium_HF_Eigen
-    using .Helium_Vh_module
+    using .Helium_HF_FEM_Eigen
+    using .Helium_Vh_FEM_module
 
     function construct(hfem_param)
-        vh_param = Helium_Vh_module.Helium_Vh_param(100)
-        vh_val = Helium_Vh_module.Helium_Vh_variables(
+        vh_param = Helium_Vh_FEM_module.Helium_Vh_FEM_param(100)
+        vh_val = Helium_Vh_FEM_module.Helium_Vh_FEM_variables(
             Array{Float64}(undef, hfem_param.ELE_TOTAL, 2, 2),
             SymTridiagonal(Array{Float64}(undef, hfem_param.NODE_TOTAL), Array{Float64}(undef, hfem_param.NODE_TOTAL - 1)),
             Array{Float64}(undef, hfem_param.NODE_TOTAL),
@@ -26,12 +26,12 @@ module Helium_Vh
     end
 
     function do_run(scfloop, hfem_param, hfem_val, vh_val)
-        if scfloop == 1
+        @match scfloop begin
             # 要素行列とLocal節点ベクトルを生成
-            make_element_matrix_and_vector_first(hfem_param, hfem_val, vh_val)
-        else
+            0 => make_element_matrix_and_vector_first(hfem_param, hfem_val, vh_val)
+        
             # 要素行列とLocal節点ベクトルを生成
-            make_element_matrix_and_vector(hfem_param, hfem_val, vh_val)
+            _ => make_element_matrix_and_vector(hfem_param, hfem_val, vh_val)
         end
 
         # 全体行列と全体ベクトルを生成
@@ -43,28 +43,19 @@ module Helium_Vh
         # 連立方程式を解く
         vh_val.ug = vh_val.mat_A_glo \ vh_val.vec_b_glo
     end
-
-    save_result(hfem_val, vh_param, vh_val) = let
-        open("result.csv", "w" ) do fp
-            for i = 2:length(hfem_val.node_r_glo)
-                r = hfem_val.node_r_glo[i]
-                println(fp, @sprintf "%.14f, %.14f, %.14f" (r) (vh_val.ug[i] / r) (- (1.0 + 1.0 / r) * exp(-2.0 * r) + 1.0 / r))
-            end
-        end
-    end
     
     function boundary_conditions(vh_val, hfem_param, tmp_dv, tmp_ev)
-        a = 0.0;
+        a = 0.0
         tmp_dv[1] = 1.0
-        vh_val.vec_b_glo[1] = a;
-        vh_val.vec_b_glo[2] -= a * tmp_ev[1];
-        tmp_ev[1] = 0.0;
+        vh_val.vec_b_glo[1] = a
+        vh_val.vec_b_glo[2] -= a * tmp_ev[1]
+        tmp_ev[1] = 0.0
     
-        b = 2.0;
-        tmp_dv[hfem_param.NODE_TOTAL] = 1.0;
-        vh_val.vec_b_glo[hfem_param.NODE_TOTAL] = b;
+        b = 2.0
+        tmp_dv[hfem_param.NODE_TOTAL] = 1.0
+        vh_val.vec_b_glo[hfem_param.NODE_TOTAL] = b
         vh_val.vec_b_glo[hfem_param.NODE_TOTAL - 1] -= b * tmp_ev[hfem_param.NODE_TOTAL - 1]
-        tmp_ev[hfem_param.NODE_TOTAL - 1] = 0.0;
+        tmp_ev[hfem_param.NODE_TOTAL - 1] = 0.0
 
         vh_val.mat_A_glo = SymTridiagonal(tmp_dv, tmp_ev)
     end
@@ -79,12 +70,12 @@ module Helium_Vh
 
                 vh_val.vec_b_ele[e, i] =
                     @match i begin
-                        1 => -GaussLegendre.gl_integ(r -> -r * Helium_HF_Eigen.rho(hfem_param, hfem_val, r) * (hfem_val.node_r_ele[e, 2] - r) / hfem_val.length[e],
+                        1 => -GaussLegendre.gl_integ(r -> -r * Helium_HF_FEM_Eigen.rho(hfem_param, hfem_val, r) * (hfem_val.node_r_ele[e, 2] - r) / hfem_val.length[e],
                                                      hfem_val.node_r_ele[e, 1],
                                                      hfem_val.node_r_ele[e, 2],
                                                      vh_val)
                         
-                        2 => -GaussLegendre.gl_integ(r -> -r * Helium_HF_Eigen.rho(hfem_param, hfem_val, r) * (r - hfem_val.node_r_ele[e, 1]) / hfem_val.length[e],
+                        2 => -GaussLegendre.gl_integ(r -> -r * Helium_HF_FEM_Eigen.rho(hfem_param, hfem_val, r) * (r - hfem_val.node_r_ele[e, 1]) / hfem_val.length[e],
                                                      hfem_val.node_r_ele[e, 1],
                                                      hfem_val.node_r_ele[e, 2],
                                                      vh_val)
@@ -124,6 +115,8 @@ module Helium_Vh
     function make_global_matrix_and_vector(hfem_param, hfem_val, vh_val)
         tmp_dv = zeros(hfem_param.NODE_TOTAL)
         tmp_ev = zeros(hfem_param.NODE_TOTAL - 1)
+
+        vh_val.vec_b_glo = zeros(hfem_param.NODE_TOTAL)
 
         # 全体行列と全体ベクトルを生成
         for e = 1:hfem_param.ELE_TOTAL
