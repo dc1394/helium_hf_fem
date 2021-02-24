@@ -48,7 +48,7 @@ module Helium_HF_FEM_Eigen
         boundary_conditions!(hfem_param, hfem_val, hg_tmp, ug_tmp)
 
         # 一般化固有値問題を解く
-        eigenval, phi = eigen(hfem_val.hg, hfem_val.ug)
+        eigenval, phi = eigen!(hfem_val.hg, hfem_val.ug)
         
         # 基底状態の固有ベクトルを取り出す
         hfem_val.phi = @view(phi[:,1])
@@ -86,13 +86,13 @@ module Helium_HF_FEM_Eigen
     end
 
     function boundary_conditions!(hfem_param, hfem_val, hg_tmp, ug_tmp)
+        hfem_val.hg = Symmetric(zeros(hfem_param.ELE_TOTAL, hfem_param.ELE_TOTAL))
+        hfem_val.ug = Symmetric(zeros(hfem_param.ELE_TOTAL, hfem_param.ELE_TOTAL))
+    
         @inbounds for i = 1:hfem_param.ELE_TOTAL
             for j = i - 1:i + 1
                 if j != 0 && j != hfem_param.NODE_TOTAL
-                    # 左辺の全体行列のN行とN列を削る
                     hfem_val.hg.data[j, i] = hg_tmp.data[j, i]
-
-                    # 右辺の全体行列のN行とN列を削る    
                     hfem_val.ug.data[j, i] = ug_tmp.data[j, i]
                 end
             end
