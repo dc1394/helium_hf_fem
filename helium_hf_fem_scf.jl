@@ -5,6 +5,7 @@ module Helium_HF_FEM_SCF
     using .Helium_HF_FEM_Eigen
     using .Helium_Vh_FEM
 
+    const DR = 0.01
     const MAXITER = 1000
     const THRESHOLD = 1.0E-10
 
@@ -53,9 +54,11 @@ module Helium_HF_FEM_SCF
 
     save_result(hfem_param, hfem_val, filename) = let
         open(filename, "w" ) do fp
-            for i = 1:length(hfem_val.node_r_glo)
-                r = hfem_val.node_r_glo[i]
-                println(fp, @sprintf "%.14f, %.14f" r hfem_val.phi[i])
+            len = length(hfem_val.node_r_glo)
+            imax = floor(Int, (hfem_val.node_r_glo[len] - hfem_val.node_r_glo[1]) / DR)
+            for i = 0:imax
+                r = hfem_val.node_r_glo[1] + DR * float(i)
+                println(fp, @sprintf "%.14f, %.14f" r Helium_Vh_FEM.phi(hfem_param, hfem_val, r))
             end
         end
     end

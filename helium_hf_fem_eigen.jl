@@ -9,10 +9,12 @@ module Helium_HF_FEM_Eigen
     using .Helium_HF_FEM_Eigen_module
     using .Helium_Vh_FEM_module
 
+    const MAXR = 50.0
+    const MINR = 0.0
     const NODE_TOTAL = 5000
 
     function construct()
-        hfem_param = Helium_HF_FEM_Eigen_module.Helium_HF_FEM_Eigen_param(NODE_TOTAL - 1, NODE_TOTAL, 200.0, 0.0)
+        hfem_param = Helium_HF_FEM_Eigen_module.Helium_HF_FEM_Eigen_param(NODE_TOTAL - 1, NODE_TOTAL, MAXR, MINR)
         hfem_val = Helium_HF_FEM_Eigen_module.Helium_HF_FEM_Eigen_variables(
             Symmetric(zeros(hfem_param.ELE_TOTAL, hfem_param.ELE_TOTAL)),
             Array{Float64}(undef, hfem_param.ELE_TOTAL),
@@ -53,6 +55,9 @@ module Helium_HF_FEM_Eigen
 
         # 固有ベクトルの要素数を増やす
         resize!(hfem_val.phi, NODE_TOTAL)
+
+        # 端点rcでの値を0にする
+        hfem_val.phi[NODE_TOTAL] = 0.0
 
         # 固有ベクトル（波動関数）を規格化
         normalize!(hfem_val)
@@ -114,11 +119,6 @@ module Helium_HF_FEM_Eigen
 
             2 =>
                 @match q begin
-                    1 => return -0.5 * le * (ed * ed + ed + 1.0 / 3.0) - le * le * (ed / 3.0 + 1.0 / 6.0) +
-                                GaussLegendre.gl_integ(r -> r * (r - hfem_val.node_r_ele[e, 1]) / hfem_val.length[e] * rVh(hfem_param, hfem_val, vh_val, r) * (hfem_val.node_r_ele[e, 2] - r) / hfem_val.length[e],
-                                                       hfem_val.node_r_ele[e, 1],
-                                                       hfem_val.node_r_ele[e, 2],
-                                                       vh_val)
                     2 => return 0.5 * le * (ed * ed + ed + 1.0 / 3.0) - le * le * (2.0 * ed / 3.0 + 0.5) +
                                 GaussLegendre.gl_integ(r -> r * (r - hfem_val.node_r_ele[e, 1]) / hfem_val.length[e] * rVh(hfem_param, hfem_val, vh_val, r) * (r - hfem_val.node_r_ele[e, 1]) / hfem_val.length[e],
                                                             hfem_val.node_r_ele[e, 1],
@@ -143,7 +143,6 @@ module Helium_HF_FEM_Eigen
 
             2 =>
                 @match q begin
-                    1 => return le * le * le * (ed * ed / 6.0 + ed / 6.0 + 0.05)
                     2 => return le * le * le * (ed * ed / 3.0 + ed / 2.0 + 0.2)
                     _ => return 0.0
                 end
@@ -198,8 +197,8 @@ module Helium_HF_FEM_Eigen
         # 要素行列の各成分を計算
         @inbounds for e = 1:hfem_param.ELE_TOTAL
             le = hfem_val.length[e]
-            for i = 1:2
-                for j = 1:2
+            for j = 1:2
+                for i = 1:j
                     hfem_val.mat_A_ele[e, i, j] = get_A_matrix_element(e, le, i, j, hfem_param, hfem_val, vh_val)
                     hfem_val.mat_B_ele[e, i, j] = get_B_matrix_element(e, le, i, j)
                 end
@@ -212,8 +211,8 @@ module Helium_HF_FEM_Eigen
         ug_tmp = Symmetric(zeros(hfem_param.NODE_TOTAL, hfem_param.NODE_TOTAL))
 
         @inbounds for e = 1:hfem_param.ELE_TOTAL
-            for i = 1:2
-                for j = 1:2
+            for j = 1:2
+                for i = 1:j
                     hg_tmp.data[hfem_val.node_num_seg[e, i], hfem_val.node_num_seg[e, j]] += hfem_val.mat_A_ele[e, i, j]
                     ug_tmp.data[hfem_val.node_num_seg[e, i], hfem_val.node_num_seg[e, j]] += hfem_val.mat_B_ele[e, i, j]
                 end
@@ -237,6 +236,6 @@ module Helium_HF_FEM_Eigen
             sum += (f0 + 4.0 * f1 + f2)
         end
         
-        hfem_val.phi ./= -sqrt(sum * hfem_val.length[1] / 3.0)
+        hfem_val.phi = map(x -> abs(x * sqrt(sum * hfem_val.length[1] / 3.0)), hfem_val.phi)
     end
 end

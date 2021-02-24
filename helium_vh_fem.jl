@@ -23,6 +23,26 @@ module Helium_Vh_FEM
         return vh_param, vh_val
     end
 
+    phi(hfem_param, hfem_val, r) = let
+        klo = 1
+        max = hfem_param.NODE_TOTAL
+        khi = max
+
+        # 表の中の正しい位置を二分探索で求める
+        @inbounds while khi - klo > 1
+            k = (khi + klo) >> 1
+
+            if hfem_val.node_r_glo[k] > r
+                khi = k        
+            else 
+                klo = k
+            end
+        end
+
+        # yvec_[i] = f(xvec_[i]), yvec_[i + 1] = f(xvec_[i + 1])の二点を通る直線を代入
+        return (hfem_val.phi[khi] - hfem_val.phi[klo]) / (hfem_val.node_r_glo[khi] - hfem_val.node_r_glo[klo]) * (r - hfem_val.node_r_glo[klo]) + hfem_val.phi[klo]
+    end
+
     function solvepoisson(iter, hfem_param, hfem_val, vh_val)
         @match iter begin
             # 要素行列とLocal節点ベクトルを生成
@@ -135,24 +155,7 @@ module Helium_Vh_FEM
     end
 
     rho(hfem_param, hfem_val, r) = let
-        klo = 1
-        max = hfem_param.NODE_TOTAL
-        khi = max
-
-        # 表の中の正しい位置を二分探索で求める
-        @inbounds while khi - klo > 1
-            k = (khi + klo) >> 1
-
-            if hfem_val.node_r_glo[k] > r
-                khi = k        
-            else 
-                klo = k
-            end
-        end
-
-        # yvec_[i] = f(xvec_[i]), yvec_[i + 1] = f(xvec_[i + 1])の二点を通る直線を代入
-        tmp = (hfem_val.phi[khi] - hfem_val.phi[klo]) / (hfem_val.node_r_glo[khi] - hfem_val.node_r_glo[klo]) * (r - hfem_val.node_r_glo[klo]) + hfem_val.phi[klo]
+        tmp = phi(hfem_param, hfem_val, r)
         return tmp * tmp
     end
-
 end
