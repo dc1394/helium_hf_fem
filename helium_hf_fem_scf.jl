@@ -46,7 +46,7 @@ module Helium_HF_FEM_SCF
             end
             
             # Poisson方程式を解く
-            Helium_Vh_FEM.solvepoisson(scfloop, hfem_param, hfem_val, vh_val)
+            Helium_Vh_FEM.solvepoisson!(scfloop, hfem_param, hfem_val, vh_val)
         end
 
         return nothing

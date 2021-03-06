@@ -66,7 +66,6 @@ module Helium_Vh_FEM
         a = 0.0
         tmp_dv[1] = 1.0
         vh_val.vec_b_glo[1] = a
-        vh_val.vec_b_glo[2] -= a * tmp_ev[1]
         tmp_ev[1] = 0.0
     
         b = 1.0
