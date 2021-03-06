@@ -43,7 +43,7 @@ module Helium_Vh_FEM
         return (hfem_val.phi[khi] - hfem_val.phi[klo]) / (hfem_val.node_r_glo[khi] - hfem_val.node_r_glo[klo]) * (r - hfem_val.node_r_glo[klo]) + hfem_val.phi[klo]
     end
 
-    function solvepoisson(iter, hfem_param, hfem_val, vh_val)
+    function solvepoisson!(iter, hfem_param, hfem_val, vh_val)
         @match iter begin
             # 要素行列とLocal節点ベクトルを生成
             0 => make_element_matrix_and_vector_first(hfem_param, hfem_val, vh_val)
@@ -56,13 +56,13 @@ module Helium_Vh_FEM
         tmp_dv, tmp_ev = make_global_matrix_and_vector(hfem_param, hfem_val, vh_val)
 
         # 境界条件処理
-        boundary_conditions(vh_val, hfem_param, tmp_dv, tmp_ev)
+        boundary_conditions!(vh_val, hfem_param, tmp_dv, tmp_ev)
 
         # 連立方程式を解く
         vh_val.ug = vh_val.mat_A_glo \ vh_val.vec_b_glo
     end
     
-    function boundary_conditions(vh_val, hfem_param, tmp_dv, tmp_ev)
+    function boundary_conditions!(vh_val, hfem_param, tmp_dv, tmp_ev)
         a = 0.0
         tmp_dv[1] = 1.0
         vh_val.vec_b_glo[1] = a

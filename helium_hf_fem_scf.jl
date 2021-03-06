@@ -20,7 +20,7 @@ module Helium_HF_FEM_SCF
         vh_param, vh_val = Helium_Vh_FEM.construct(hfem_param)
         
         # 仮の電子密度でPoisson方程式を解く
-        Helium_Vh_FEM.solvepoisson(0, hfem_param, hfem_val, vh_val)
+        Helium_Vh_FEM.solvepoisson!(0, hfem_param, hfem_val, vh_val)
 
         # 新しく計算されたエネルギー
         enew = 0.0
