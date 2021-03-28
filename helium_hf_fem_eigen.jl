@@ -4,7 +4,7 @@ module Helium_HF_FEM_Eigen
     include("helium_vh_fem_module.jl")
     using LinearAlgebra
     using Match
-    using Printf
+    using MKL
     using .GaussLegendre
     using .Helium_HF_FEM_Eigen_module
     using .Helium_Vh_FEM_module
