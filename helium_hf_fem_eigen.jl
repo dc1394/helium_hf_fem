@@ -21,7 +21,7 @@ module Helium_HF_FEM_Eigen
             Array{Float64, 3}(undef, hfem_param.ELE_TOTAL, 2, 2),
             Array{Float64, 3}(undef, hfem_param.ELE_TOTAL, 2, 2),
             Array{Int64, 2}(undef, hfem_param.ELE_TOTAL, 2),
-            Array{Float64, 2}(undef, hfem_param.ELE_TOTAL, hfem_param.ELE_TOTAL),
+            Array{Float64, 2}(undef, hfem_param.ELE_TOTAL, 2),
             Array{Float64}(undef, hfem_param.NODE_TOTAL),
             Array{Float64}(undef, hfem_param.NODE_TOTAL),
             Symmetric(zeros(hfem_param.ELE_TOTAL, hfem_param.ELE_TOTAL)),
