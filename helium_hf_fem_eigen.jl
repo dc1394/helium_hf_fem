@@ -153,8 +153,7 @@ module Helium_HF_FEM_Eigen
     
     get_totalenergy(eigenenergy, hfem_param, hfem_val, vh_val) = let
         sum = 0.0
-        len = length(hfem_val.phi)
-        max = len - 2
+        max = length(hfem_val.phi) - 2
 
         # Simpsonの公式によって数値積分する
         @inbounds @simd for i = 1:2:max
