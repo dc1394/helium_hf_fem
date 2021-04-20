@@ -3,7 +3,6 @@ module Helium_Vh_FEM
     include("helium_vh_fem_module.jl")
     using LinearAlgebra
     using Match
-    using Printf
     using .GaussLegendre
     using .Helium_Vh_FEM_module
 
