@@ -7,7 +7,7 @@ module Helium_HF_FEM_SCF
 
     const DR = 0.01
     const MAXITER = 1000
-    const THRESHOLD = 5.0E-13
+    const THRESHOLD = 1.0E-12
 
     function scfloop()
         # Schrödinger方程式を解くルーチンの初期処理

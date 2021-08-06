@@ -235,6 +235,6 @@ module Helium_HF_FEM_Eigen
             sum += (f0 + 4.0 * f1 + f2)
         end
         
-        hfem_val.phi = map(x -> abs(x * sqrt(sum * hfem_val.length[1] / 3.0)), hfem_val.phi)
+        hfem_val.phi = abs.(hfem_val.phi * sqrt(sum * hfem_val.length[1] / 3.0))
     end
 end
