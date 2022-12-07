@@ -48,7 +48,7 @@ module Helium_HF_FEM_Eigen
         boundary_conditions!(hfem_param, hfem_val, hg_tmp, ug_tmp)
 
         # 一般化固有値問題を解く
-        eigenval, phi = eigen!(hfem_val.hg, hfem_val.ug)
+        @time eigenval, phi = eigen!(hfem_val.hg, hfem_val.ug)
         
         # 基底状態の固有ベクトルを取り出す
         hfem_val.phi = @view(phi[:,1])
