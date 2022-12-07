@@ -11,7 +11,7 @@ module Helium_HF_FEM_Eigen
 
     const MAXR = 50.0
     const MINR = 0.0
-    const NODE_TOTAL = 5000
+    const NODE_TOTAL = 10000
 
     function construct()
         hfem_param = Helium_HF_FEM_Eigen_module.Helium_HF_FEM_Eigen_param(NODE_TOTAL - 1, NODE_TOTAL, MAXR, MINR)

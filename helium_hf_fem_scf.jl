@@ -34,7 +34,7 @@ module Helium_HF_FEM_SCF
             # 今回のSCF計算のエネルギーを計算する
             enew = Helium_HF_FEM_Eigen.get_totalenergy(eigenenergy, hfem_param, hfem_val, vh_val)
             
-            @printf "Iteration # %2d: HF eigenvalue = %.14f, energy = %.14f\n一般化固有値問題の解法にかかった時間: " iter eigenenergy enew
+            @printf "Iteration # %2d: HF eigenvalue = %.14f, energy = %.14f\n一般化固有値問題を解くのにかかった時間: " iter eigenenergy enew
             
             # SCF計算が収束したかどうか
             if abs(enew - eold) <= THRESHOLD
