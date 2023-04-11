@@ -11,7 +11,7 @@ module Helium_HF_FEM_Eigen
 
     const MAXR = 50.0
     const MINR = 0.0
-    const NODE_TOTAL = 10000
+    const NODE_TOTAL = 5000
 
     function construct()
         hfem_param = Helium_HF_FEM_Eigen_module.Helium_HF_FEM_Eigen_param(NODE_TOTAL - 1, NODE_TOTAL, MAXR, MINR)
@@ -170,10 +170,9 @@ module Helium_HF_FEM_Eigen
     function make_data!(hfem_param, hfem_val)
         # Global節点のx座標を定義(R_MIN～R_MAX）
         dr = (hfem_param.R_MAX - hfem_param.R_MIN) / float(hfem_param.ELE_TOTAL)
-        @inbounds for i = 0:hfem_param.NODE_TOTAL - 1
-            # 計算領域を等分割
-            hfem_val.node_r_glo[i + 1] = hfem_param.R_MIN + float(i) * dr
-        end
+        
+        # 計算領域を等分割
+        hfem_val.node_r_glo = collect(hfem_param.R_MIN:dr:hfem_param.R_MAX)
 
         @inbounds for e = 1:hfem_param.ELE_TOTAL
             hfem_val.node_num_seg[e, 1] = e
